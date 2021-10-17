@@ -7,20 +7,19 @@ import com.todo.dao.TodoItem;
 import com.todo.dao.TodoList;
 
 public class TodoUtil {
+	
+	public static void createSecretItem(TodoList l) {
+		String title, memo, category, due_date, priority;
 
-	public static void createItem(TodoList l) {
-
-		String title, memo, category, due_date;
 		Scanner sc = new Scanner(System.in);
 
-		System.out.print("\n===[할 일 추가]===\n" + "제목 >> ");
+		System.out.print("\n===[비밀 할 일 추가]===\n" + "제목 >> ");
 		title = sc.nextLine().trim();
 
-		// 나중에 DB에서 조회하는 방식으로 변경할 부분
-//		if (l.isDuplicate(title)) {
-//			System.out.printf("같은 제목이 이미 있습니다.");
-//			return;
-//		}
+		if (l.isDuplicate(title)) {
+			System.out.printf("같은 제목이 이미 있습니다.\n");
+			return;
+		}
 
 		System.out.print("카테고리 >> ");
 		category = sc.next().trim();
@@ -33,9 +32,62 @@ public class TodoUtil {
 		System.out.print("마감일자(YYYY/MM/DD) >> ");
 		due_date = sc.nextLine().trim();
 
-		TodoItem t = new TodoItem(category, title, memo, due_date);
+		System.out.print("중요도(상/중/하) >> ");
+		priority = sc.next().trim();
+
+		TodoItem t = new TodoItem(category, title, memo, due_date, priority);
+		t.setIs_secret(1);
+		if (l.addSecretItem(t) > 0)
+			System.out.println("비밀 할 일이 성공적으로 추가되었습니다.");
+	}
+
+	public static void createItem(TodoList l) {
+		String title, memo, category, due_date, priority;
+
+		Scanner sc = new Scanner(System.in);
+
+		System.out.print("\n===[할 일 추가]===\n" + "제목 >> ");
+		title = sc.nextLine().trim();
+
+		if (l.isDuplicate(title)) {
+			System.out.printf("같은 제목이 이미 있습니다.\n");
+			return;
+		}
+
+		System.out.print("카테고리 >> ");
+		category = sc.next().trim();
+
+		sc.nextLine();
+
+		System.out.print("내용 >> ");
+		memo = sc.nextLine().trim();
+
+		System.out.print("마감일자(YYYY/MM/DD) >> ");
+		due_date = sc.nextLine().trim();
+
+		System.out.print("중요도(상/중/하) >> ");
+		priority = sc.next().trim();
+
+		TodoItem t = new TodoItem(category, title, memo, due_date, priority);
 		if (l.addItem(t) > 0)
 			System.out.println("할 일이 성공적으로 추가되었습니다.");
+
+		// 코드상에서 데이터 추가할 때 쓰는 코드
+//		String title, memo, category, due_date;
+//		TodoItem t;
+//
+//		title = "초록 안경";
+//		category = "쇼핑";
+//		memo = "인터넷으로 초록색 안경 사기";
+//		due_date = "2021/10/15";
+//		t = new TodoItem(category, title, memo, due_date);
+//		if (l.addItem(t) > 0)
+//			System.out.println("할 일이 성공적으로 추가되었습니다.");
+//		try {
+//			TimeUnit.SECONDS.sleep(14);
+//		} catch (InterruptedException e) {
+//			e.printStackTrace();
+//		}
 	}
 
 	public static void deleteItem(TodoList l) {
@@ -67,7 +119,7 @@ public class TodoUtil {
 //			default:
 //				System.out.println("\n정확한 명령어를 입력하세요.");
 //			}
-		
+
 		if (l.deleteItem(num) > 0)
 			System.out.println("할 일이 성공적으로 삭제되었습니다.");
 	}
@@ -113,10 +165,22 @@ public class TodoUtil {
 		System.out.print("새 마감일자(YYYY/MM/DD) >> ");
 		String new_due_date = sc.nextLine().trim();
 
-		TodoItem t = new TodoItem(new_category, new_title, new_memo, new_due_date);
-		t.setId(num);
+		System.out.print("새 중요도(상/중/하) >> ");
+		String new_priority = sc.next().trim();
+
+		TodoItem t = new TodoItem(new_category, new_title, new_memo, new_due_date, new_priority);
+
 		if (l.updateItem(t) > 0)
 			System.out.println("할 일이 성공적으로 수정되었습니다.");
+	}
+	
+	public static void listAllSecret(TodoList l) {
+		ArrayList<TodoItem> list = l.getSecretList();
+		int count = list.size();
+		System.out.println("\n***[비밀 목록]***\n" + "총 " + count + "개의 할 일이 있습니다.");
+		for (TodoItem item : list) {
+			System.out.println(item.toString());
+		}
 	}
 
 	public static void listAll(TodoList l) {
@@ -126,11 +190,41 @@ public class TodoUtil {
 			System.out.println(item.toString());
 		}
 	}
-	
+
 	public static void listAllOrdered(TodoList l, String orderBy, boolean isDesc) {
 		int count = l.getCount();
 		System.out.println("\n***[전체 목록]***\n" + "총 " + count + "개의 할 일이 있습니다.");
 		for (TodoItem item : l.getOrderedList(orderBy, isDesc)) {
+			System.out.println(item.toString());
+		}
+	}
+
+	public static void listAllCompleted(TodoList l) {
+		ArrayList<TodoItem> list = l.getCompletedList();
+		int count = list.size();
+
+		System.out.println("\n***[완료 목록]***\n" + "총 " + count + "개의 완료된 할 일이 있습니다.");
+		for (TodoItem item : list) {
+			System.out.println(item.toString());
+		}
+	}
+
+	public static void listDaysLeft(TodoList l, String keyword) {
+		ArrayList<TodoItem> list = l.getSearchedList(null);
+		if (keyword == "") {
+			System.out.println("\n정확한 명령어를 입력하세요. 명령어 목록을 보시려면 \"help\"를 입력하세요.");
+			return;
+		}
+		int compare_num = Integer.parseInt(keyword);
+		for (TodoItem item : l.getList()) {
+			if (item.getLeftDays() < compare_num && item.getLeftDays() >= 0 && item.getIs_completed() == 0)
+				list.add(item);
+		}
+		int count = list.size();
+
+		System.out.println("\n***[" + keyword + "일 이내 끝내야 할 목록]***\n" + "총 " + count + "개의 할 일이 있습니다.");
+
+		for (TodoItem item : list) {
 			System.out.println(item.toString());
 		}
 	}
@@ -166,5 +260,23 @@ public class TodoUtil {
 		}
 
 		System.out.println("\n총 " + count + "개의 카테고리를 찾았습니다.");
+	}
+
+	public static void set_completed(TodoList l, String index) {
+		if (l.setCompleted(index) > 0)
+			System.out.println(l.getItem(index).toString());
+		System.out.println("위 할 일이 성공적으로 완료 처리 되었습니다.");
+	}
+
+	public static void listPriority(TodoList l, String keyword) {
+		int count = 0;
+
+		System.out.println("\n***[중요도 " + keyword + " 목록]***");
+		for (TodoItem item : l.getPriorityList(keyword)) {
+			System.out.println(item.toString());
+			count++;
+		}
+
+		System.out.println("총 " + count + "개의 할 일을 찾았습니다.");
 	}
 }
